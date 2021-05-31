@@ -2,6 +2,7 @@ const Photo = require('../models/photo.model');
 const Voter = require('../models/Voter.model');
 const requestIp = require('request-ip');
 
+
 /****** SUBMIT PHOTO ********/
 
 exports.add = async (req, res) => {
@@ -14,14 +15,14 @@ exports.add = async (req, res) => {
     const correctTitle = title.match(regExp).join('');
     const correctAuthor = author.match(regExp).join('');
 
-    if (correctAuthor > author || correctTitle > title) {
-      res.json({ message: err });
+    if (correctAuthor !== author || correctTitle !== title) {
+      res.status(400).res.json({ message: "err" });
     };
 
     const regExpEmail = RegExp(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     const correctEmail = regExpEmail.test(email);
     if (!correctEmail) {
-      res.json({ message: err });
+      res.status(400).res.json({ message: 'err' });
     }
 
 
@@ -35,7 +36,7 @@ exports.add = async (req, res) => {
         await newPhoto.save(); // ...save new photo in DB
         res.json(newPhoto);
       } else {
-        res.json({ message: err });
+        res.status(400).res.json({ message: 'err' });
       }
 
     } else {
@@ -68,25 +69,31 @@ exports.vote = async (req, res) => {
     const photoToUpdate = await Photo.findOne({ _id: req.params.id });
     const clientIp = requestIp.getClientIp(req);
     const newVoter = await Voter.findOne({ user: clientIp });
+
     if (!photoToUpdate) res.status(404).json({ message: 'Not found' });
     if (newVoter) {
       if (newVoter.votes.includes(req.params.id)) {
-        res.send({ message: 'You added vote' });
+        res.status(400).res.send({ message: 'You added vote' });
       } else {
+
         newVoter.votes.push(req.params.id);
-        photoToUpdate.votes++;
         photoToUpdate.save();
+        photoToUpdate.votes++;
+        newVoter.save();
+        res.status(200).res.send({ message: 'ok' });
       }
     }
     else {
       const addVoter = new Voter({ user: clientIp, votes: req.params.id });
-      await addVoter.save();
+      addVoter.save();
       photoToUpdate.votes++;
       photoToUpdate.save();
-      res.send({ message: 'OK' });
+      res.status(200).res.send({ message: 'OK' });
     }
   } catch (err) {
+    console.error(err)
     res.status(500).json(err);
+
   }
 
 };
