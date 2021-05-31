@@ -72,23 +72,23 @@ exports.vote = async (req, res) => {
 
     if (!photoToUpdate) res.status(404).json({ message: 'Not found' });
     if (newVoter) {
-      if (newVoter.votes.includes(req.params.id)) {
-        res.status(400).res.send({ message: 'You added vote' });
+      if (!newVoter.votes.includes(req.params.id)) {
+        res.status(400).json({ message: 'You added vote' });
       } else {
 
         newVoter.votes.push(req.params.id);
-        photoToUpdate.save();
+        await photoToUpdate.save();
         photoToUpdate.votes++;
-        newVoter.save();
-        res.status(200).res.send({ message: 'ok' });
+        await newVoter.save();
+        res.status(200).json({ message: 'ok' });
       }
     }
     else {
       const addVoter = new Voter({ user: clientIp, votes: req.params.id });
-      addVoter.save();
+      await addVoter.save();
       photoToUpdate.votes++;
-      photoToUpdate.save();
-      res.status(200).res.send({ message: 'OK' });
+      await photoToUpdate.save();
+      res.status(200).json({ message: 'OK' });
     }
   } catch (err) {
     console.error(err)
